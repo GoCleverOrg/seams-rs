@@ -1,0 +1,18 @@
+[package]
+authors.workspace = true
+categories = ["development-tools::testing", "asynchronous", "concurrency"]
+description = "Runtime-agnostic seams for strict-hexagonal testability: Clock, Sleeper, Spawner traits (no std runtime deps)"
+edition.workspace = true
+keywords = ["hexagonal", "ports-and-adapters", "testing", "clock", "seams"]
+license.workspace = true
+name = "seams-rs-core"
+readme = "README.md"
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+
+[dev-dependencies]
+seams-rs-fake = { version = "0.1.0", path = "../seams-rs-fake" }

@@ -1,0 +1,15 @@
+[package]
+authors.workspace = true
+categories = ["development-tools", "asynchronous", "concurrency"]
+description = "Standard-library-backed production impls of seams-rs-core ports: SystemClock, StdSleeper, StdSpawner"
+edition.workspace = true
+keywords = ["clock", "sleeper", "spawner", "std", "hexagonal"]
+license.workspace = true
+name = "seams-rs-std"
+readme = "README.md"
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+seams-rs-core = { version = "0.1.0", path = "../seams-rs-core" }

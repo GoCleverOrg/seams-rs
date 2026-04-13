@@ -1,0 +1,15 @@
+[package]
+authors.workspace = true
+categories = ["development-tools::testing", "asynchronous", "concurrency"]
+description = "Deterministic in-memory seams-rs-core implementations: ManualClock, InstantSleeper, CurrentThreadSpawner"
+edition.workspace = true
+keywords = ["testing", "fake", "clock", "hexagonal", "deterministic"]
+license.workspace = true
+name = "seams-rs-fake"
+readme = "README.md"
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+seams-rs-core = { version = "0.1.0", path = "../seams-rs-core" }

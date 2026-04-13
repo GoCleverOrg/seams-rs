@@ -1,0 +1,26 @@
+[package]
+authors.workspace = true
+categories = ["development-tools::testing", "asynchronous", "concurrency"]
+description = "Hexagonal strict-DI seams for time, sleeping, and thread spawning"
+edition.workspace = true
+keywords = ["hexagonal", "ports-and-adapters", "clock", "testing", "seams"]
+license.workspace = true
+name = "seams-rs"
+readme = "README.md"
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[features]
+default = []
+# Enables the real std-backed implementations via `seams-rs-std`. When
+# off, only the `seams-rs-core` port layer is re-exported — useful in
+# no_std adjacent consumers that only need trait definitions + the fakes.
+std = ["dep:seams-rs-std"]
+
+[dependencies]
+seams-rs-core = { version = "0.1.0", path = "../seams-rs-core" }
+seams-rs-std = { version = "0.1.0", path = "../seams-rs-std", optional = true }
+
+[dev-dependencies]
+seams-rs-fake = { version = "0.1.0", path = "../seams-rs-fake" }
