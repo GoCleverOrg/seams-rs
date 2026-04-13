@@ -62,9 +62,11 @@ pub fn sleeper_responsive_shutdown_during<S: Sleeper>(sleeper: &S) {
     let start = Instant::now();
     let triggered = sleeper.sleep_responsive(Duration::from_secs(10), &shutdown);
     let elapsed = start.elapsed();
-    // Either shutdown was observed, or the sleeper returned before the
-    // flag-flip thread could store (fake case).
-    let ok = triggered || elapsed < Duration::from_millis(20);
+    // Either shutdown was observed during the call, or the sleeper returned
+    // before the flag-flip thread had a chance to store (instant-fake case,
+    // detectable because the flag is still `false` post-return).
+    let observed_after = shutdown.load(Ordering::SeqCst);
+    let ok = triggered || !observed_after;
     assert!(ok, "sleeper waited {elapsed:?} without observing shutdown");
     assert!(elapsed < Duration::from_secs(5));
 }

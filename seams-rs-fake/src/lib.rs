@@ -309,6 +309,35 @@ mod tests {
         let h = s.spawn_blocking(|| 7);
         assert_eq!(s.pending_count(), 1);
         s.run_pending();
+        assert_eq!(s.pending_count(), 0);
         assert_eq!(h.join().unwrap(), 7);
+    }
+
+    #[test]
+    fn deferred_spawner_pending_count_starts_zero() {
+        let s = DeferredSpawner::new();
+        assert_eq!(s.pending_count(), 0);
+    }
+
+    #[test]
+    fn deferred_spawner_join_all_drains() {
+        let s = DeferredSpawner::new();
+        let h = s.spawn_blocking(|| 99);
+        assert_eq!(s.pending_count(), 1);
+        s.join_all();
+        assert_eq!(s.pending_count(), 0);
+        assert_eq!(h.join().unwrap(), 99);
+    }
+
+    #[test]
+    fn manual_clock_now_instant_tracks_advance() {
+        let c = ManualClock::new();
+        let t0 = c.now_instant();
+        c.advance(Duration::from_millis(50));
+        let t1 = c.now_instant();
+        assert_eq!(
+            t1.saturating_duration_since(t0),
+            Duration::from_millis(50)
+        );
     }
 }
