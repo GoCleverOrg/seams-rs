@@ -26,6 +26,9 @@ registries = []
 highlight = "all"
 multiple-versions = "warn"
 wildcards = "deny"
+# Intra-workspace dev-deps are path-only (no version) to unblock the
+# first-publish chicken-and-egg. They appear as wildcards to cargo-deny.
+allow-wildcard-paths = true
 
 [sources]
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
