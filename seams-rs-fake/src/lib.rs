@@ -335,9 +335,6 @@ mod tests {
         let t0 = c.now_instant();
         c.advance(Duration::from_millis(50));
         let t1 = c.now_instant();
-        assert_eq!(
-            t1.saturating_duration_since(t0),
-            Duration::from_millis(50)
-        );
+        assert_eq!(t1.saturating_duration_since(t0), Duration::from_millis(50));
     }
 }
