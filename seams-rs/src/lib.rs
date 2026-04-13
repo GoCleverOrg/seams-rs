@@ -13,7 +13,7 @@
 //!             seams-rs    ← this facade
 //! ```
 
-pub use seams_rs_core as core;
+pub use seams_rs_core::{contract_tests, Clock, JoinError, JoinHandle, Sleeper, Spawner};
 
 #[cfg(feature = "std")]
-pub use seams_rs_std as std_backend;
+pub use seams_rs_std::{StdSleeper, StdSpawner, SystemClock};

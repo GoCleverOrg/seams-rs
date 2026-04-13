@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Initial workspace scaffold (issue #1 will fill in the port implementations).
-
 ## [0.1.0] — TBD
 
-First release. See issue #1 for the initial scope.
+First release.
+
+### Added
+
+- Initial workspace scaffold.
+- `Clock` trait (`now_ns`, `now_instant`) in `seams-rs-core`.
+- `Sleeper` trait (`sleep`, `sleep_responsive`) in `seams-rs-core`.
+- `Spawner` trait (`spawn_blocking`) plus `JoinHandle` and `JoinError`
+  in `seams-rs-core`.
+- `contract_tests` module exposing reusable generic helpers that exercise
+  each port's contract.
+- `seams-rs-fake` adapters: `ManualClock`, `InstantSleeper`,
+  `CurrentThreadSpawner`, `DeferredSpawner`.
+- `seams-rs-std` adapters: `SystemClock`, `StdSleeper`, `StdSpawner`.
+- `seams-rs` facade crate re-exporting the core traits and, under the
+  `std` feature, the standard-library adapters.
