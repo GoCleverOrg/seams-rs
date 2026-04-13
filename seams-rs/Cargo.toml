@@ -19,8 +19,11 @@ default = []
 std = ["dep:seams-rs-std"]
 
 [dependencies]
-seams-rs-core = { version = "0.1.0", path = "../seams-rs-core" }
-seams-rs-std = { version = "0.1.0", path = "../seams-rs-std", optional = true }
+seams-rs-core = { version = "0.1.1", path = "../seams-rs-core" }
+seams-rs-std = { version = "0.1.1", path = "../seams-rs-std", optional = true }
 
 [dev-dependencies]
-seams-rs-fake = { version = "0.1.0", path = "../seams-rs-fake" }
+# Path-only (no `version`): the facade tests use the fake, and seams-rs is
+# published last in the chain — keeping `version` would force cargo publish
+# to re-resolve it from crates.io as a dev-dep during verification.
+seams-rs-fake = { path = "../seams-rs-fake" }

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] — TBD
+
+### Fixed
+
+- First-publish chicken-and-egg: intra-workspace dev-dependencies on
+  `seams-rs-fake` in `seams-rs-core` and `seams-rs` are now path-only
+  (no `version` field), so `cargo publish` does not try to resolve
+  `seams-rs-fake` from crates.io before it exists there. No runtime
+  behaviour change.
+
 ## [0.1.0] — TBD
 
 First release.

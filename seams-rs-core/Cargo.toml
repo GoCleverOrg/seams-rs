@@ -15,4 +15,6 @@ version.workspace = true
 thiserror = { workspace = true }
 
 [dev-dependencies]
-seams-rs-fake = { version = "0.1.0", path = "../seams-rs-fake" }
+# Path-only (no `version`): avoids a chicken-and-egg resolve on the first
+# workspace publish — seams-rs-core is published before seams-rs-fake.
+seams-rs-fake = { path = "../seams-rs-fake" }
