@@ -3,7 +3,13 @@
 //! `ManualClock` advances via explicit test calls. `InstantSleeper`
 //! returns immediately and records requested durations. `CurrentThreadSpawner`
 //! runs `spawn_blocking` closures inline; `DeferredSpawner` captures
-//! handles for explicit test-controlled joining.
+//! handles for explicit test-controlled joining. `MemoryFileSystem`
+//! is an in-memory VFS exposing both `FileSystem` and
+//! `AsyncFileSystem` backed by the same state, with scripted
+//! error injection by `(path, FsOp)`.
+
+pub mod memory_fs;
+pub use memory_fs::{FsOp, MemoryFileSystem};
 
 use std::any::Any;
 use std::sync::atomic::{AtomicBool, Ordering};

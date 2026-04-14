@@ -1,10 +1,12 @@
 //! Runtime-agnostic seams for strict-hexagonal testability.
 //!
 //! This crate defines the `Clock`, `Sleeper`, and `Spawner` traits plus
-//! associated DTOs (`JoinHandle`, error types). Production code and test
-//! code both depend on these traits; neither `std::time::SystemTime`,
-//! `std::thread::spawn`, nor `std::thread::sleep` should appear
-//! anywhere in downstream orchestration code.
+//! the `FileSystem` and `AsyncFileSystem` trait families and the
+//! associated DTOs (`JoinHandle`, `Metadata`, error types). Production
+//! code and test code both depend on these traits; neither
+//! `std::time::SystemTime`, `std::thread::spawn`, `std::thread::sleep`,
+//! `std::fs::*`, nor `tokio::fs::*` should appear anywhere in
+//! downstream orchestration code.
 //!
 //! Production implementations live in `seams-rs-std`. Deterministic
 //! in-memory implementations for unit tests live in `seams-rs-fake`.
@@ -14,6 +16,12 @@ use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
 pub mod contract_tests;
+pub mod fs;
+
+pub use fs::{
+    AsyncFileRead, AsyncFileSystem, AsyncFileWrite, BoxFuture, FileRead, FileSystem, FileWrite,
+    Metadata,
+};
 
 /// A source of time. Implementations must be `Send + Sync + 'static`.
 pub trait Clock: Send + Sync + 'static {

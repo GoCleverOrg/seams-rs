@@ -1,9 +1,9 @@
 [package]
 authors.workspace = true
 categories = ["development-tools::testing", "asynchronous", "concurrency"]
-description = "Hexagonal strict-DI seams for time, sleeping, and thread spawning"
+description = "Hexagonal strict-DI seams for time, sleeping, thread spawning, and filesystem I/O"
 edition.workspace = true
-keywords = ["hexagonal", "ports-and-adapters", "clock", "testing", "seams"]
+keywords = ["hexagonal", "ports-and-adapters", "filesystem", "testing", "seams"]
 license.workspace = true
 name = "seams-rs"
 readme = "README.md"
@@ -19,8 +19,8 @@ default = []
 std = ["dep:seams-rs-std"]
 
 [dependencies]
-seams-rs-core = { version = "0.1.1", path = "../seams-rs-core" }
-seams-rs-std = { version = "0.1.1", path = "../seams-rs-std", optional = true }
+seams-rs-core = { version = "0.2.0", path = "../seams-rs-core" }
+seams-rs-std = { version = "0.2.0", path = "../seams-rs-std", optional = true }
 
 [dev-dependencies]
 # Path-only (no `version`): the facade tests use the fake, and seams-rs is
