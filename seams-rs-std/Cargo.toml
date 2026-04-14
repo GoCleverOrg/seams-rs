@@ -1,9 +1,9 @@
 [package]
 authors.workspace = true
 categories = ["development-tools", "asynchronous", "concurrency"]
-description = "Standard-library-backed production impls of seams-rs-core ports: SystemClock, StdSleeper, StdSpawner"
+description = "Standard-library-backed production impls of seams-rs-core ports: SystemClock, StdSleeper, StdSpawner, StdFileSystem, TokioFileSystem"
 edition.workspace = true
-keywords = ["clock", "sleeper", "spawner", "std", "hexagonal"]
+keywords = ["filesystem", "tokio", "std", "hexagonal", "seams"]
 license.workspace = true
 name = "seams-rs-std"
 readme = "README.md"
@@ -12,4 +12,9 @@ rust-version.workspace = true
 version.workspace = true
 
 [dependencies]
-seams-rs-core = { version = "0.1.1", path = "../seams-rs-core" }
+seams-rs-core = { version = "0.2.0", path = "../seams-rs-core" }
+tokio = { workspace = true, features = ["fs", "io-util", "rt"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util", "rt", "macros"] }

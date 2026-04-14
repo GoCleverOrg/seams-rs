@@ -1,9 +1,9 @@
 [package]
 authors.workspace = true
 categories = ["development-tools::testing", "asynchronous", "concurrency"]
-description = "Runtime-agnostic seams for strict-hexagonal testability: Clock, Sleeper, Spawner traits (no std runtime deps)"
+description = "Runtime-agnostic seams for strict-hexagonal testability: Clock, Sleeper, Spawner, FileSystem, AsyncFileSystem traits (no std runtime deps)"
 edition.workspace = true
-keywords = ["hexagonal", "ports-and-adapters", "testing", "clock", "seams"]
+keywords = ["hexagonal", "ports-and-adapters", "testing", "filesystem", "seams"]
 license.workspace = true
 name = "seams-rs-core"
 readme = "README.md"
@@ -18,3 +18,4 @@ thiserror = { workspace = true }
 # Path-only (no `version`): avoids a chicken-and-egg resolve on the first
 # workspace publish — seams-rs-core is published before seams-rs-fake.
 seams-rs-fake = { path = "../seams-rs-fake" }
+tokio = { workspace = true, features = ["rt", "macros"] }

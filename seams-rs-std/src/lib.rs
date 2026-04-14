@@ -3,6 +3,11 @@
 //! - `SystemClock` wraps `std::time::SystemTime::now`.
 //! - `StdSleeper` wraps `std::thread::sleep`.
 //! - `StdSpawner` wraps `std::thread::spawn`.
+//! - `StdFileSystem` wraps `std::fs::*`.
+//! - `TokioFileSystem` wraps `tokio::fs::*`.
+
+pub mod fs;
+pub use fs::{StdFileSystem, TokioFileSystem};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
