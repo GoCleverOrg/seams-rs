@@ -101,8 +101,6 @@ fn not_found() -> io::Error {
     io::Error::from(io::ErrorKind::NotFound)
 }
 
-// ---------------- core sync ops (shared by both traits) ----------------
-
 fn op_create_dir_all(st: &mut VfsState, path: &Path) -> io::Result<()> {
     if let Some(k) = st.take_injection(path, FsOp::CreateDir) {
         return Err(io::Error::from(k));
@@ -154,7 +152,7 @@ fn op_metadata(st: &mut VfsState, path: &Path) -> io::Result<Metadata> {
         ));
     }
     if st.dirs.contains(path) {
-        return Ok(Metadata::new(0, false, true, Some(SystemTime::now())));
+        return Ok(Metadata::new(0, false, true, None));
     }
     Err(not_found())
 }
@@ -168,7 +166,6 @@ fn op_rename(st: &mut VfsState, from: &Path, to: &Path) -> io::Result<()> {
         return Ok(());
     }
     if st.dirs.contains(from) {
-        // Collect and move all entries under `from` to `to`.
         let moved_dirs: Vec<PathBuf> = st
             .dirs
             .iter()
@@ -210,7 +207,26 @@ fn op_ensure_parent_dir(st: &VfsState, path: &Path) -> io::Result<()> {
     }
 }
 
-// ---------------- FileSystem impl ----------------
+fn op_prepare_write(st: &mut VfsState, path: &Path) -> io::Result<()> {
+    if let Some(k) = st.take_injection(path, FsOp::OpenWrite) {
+        return Err(io::Error::from(k));
+    }
+    if st.dirs.contains(path) {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "path is a directory",
+        ));
+    }
+    op_ensure_parent_dir(st, path)?;
+    st.files.insert(
+        path.to_path_buf(),
+        FileNode {
+            data: Vec::new(),
+            modified: SystemTime::now(),
+        },
+    );
+    Ok(())
+}
 
 impl FileSystem for MemoryFileSystem {
     fn create_dir_all(&self, path: &Path) -> io::Result<()> {
@@ -243,17 +259,7 @@ impl FileSystem for MemoryFileSystem {
 
     fn open_write(&self, path: &Path) -> io::Result<Box<dyn FileWrite>> {
         self.with(|st| {
-            if let Some(k) = st.take_injection(path, FsOp::OpenWrite) {
-                return Err(io::Error::from(k));
-            }
-            op_ensure_parent_dir(st, path)?;
-            st.files.insert(
-                path.to_path_buf(),
-                FileNode {
-                    data: Vec::new(),
-                    modified: SystemTime::now(),
-                },
-            );
+            op_prepare_write(st, path)?;
             Ok(Box::new(MemoryFileWrite {
                 state: Arc::clone(&self.state),
                 path: path.to_path_buf(),
@@ -270,8 +276,6 @@ impl FileSystem for MemoryFileSystem {
         self.with(|st| op_rename(st, from, to))
     }
 }
-
-// ---------------- AsyncFileSystem impl ----------------
 
 impl AsyncFileSystem for MemoryFileSystem {
     fn create_dir_all<'a>(&'a self, path: &'a Path) -> BoxFuture<'a, io::Result<()>> {
@@ -313,17 +317,7 @@ impl AsyncFileSystem for MemoryFileSystem {
     ) -> BoxFuture<'a, io::Result<Box<dyn AsyncFileWrite>>> {
         Box::pin(async move {
             self.with(|st| {
-                if let Some(k) = st.take_injection(path, FsOp::OpenWrite) {
-                    return Err(io::Error::from(k));
-                }
-                op_ensure_parent_dir(st, path)?;
-                st.files.insert(
-                    path.to_path_buf(),
-                    FileNode {
-                        data: Vec::new(),
-                        modified: SystemTime::now(),
-                    },
-                );
+                op_prepare_write(st, path)?;
                 Ok(Box::new(MemoryFileWrite {
                     state: Arc::clone(&self.state),
                     path: path.to_path_buf(),
@@ -341,8 +335,6 @@ impl AsyncFileSystem for MemoryFileSystem {
         Box::pin(async move { self.with(|st| op_rename(st, from, to)) })
     }
 }
-
-// ---------------- file-handle impls ----------------
 
 struct MemoryFileRead {
     state: Arc<Mutex<VfsState>>,

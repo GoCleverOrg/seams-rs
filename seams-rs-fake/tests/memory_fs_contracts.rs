@@ -110,8 +110,6 @@ fn sync_file_write_seek() {
     ct::fs_file_write_seek(&fresh(&b), &b);
 }
 
-// Async helpers run under a current-thread tokio runtime.
-
 fn rt() -> tokio::runtime::Runtime {
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -224,8 +222,6 @@ fn sync_async_interop_same_state() {
     rt().block_on(ct::fs_sync_async_interop(&sync_fs, &async_fs, &b));
 }
 
-// ---------------- scripted error injection ----------------
-
 fn expect_err_kind<T>(res: std::io::Result<T>, want: ErrorKind) {
     match res {
         Ok(_) => panic!("expected {want:?}, got Ok"),
@@ -241,7 +237,6 @@ fn inject_not_found_on_exists() {
     FileSystem::create_dir_all(&fs, &p).unwrap();
     fs.inject_error(&p, FsOp::Exists, ErrorKind::NotFound);
     expect_err_kind(FileSystem::try_exists(&fs, &p), ErrorKind::NotFound);
-    // Injection is consumed — next call succeeds.
     assert!(FileSystem::try_exists(&fs, &p).unwrap());
 }
 
@@ -287,9 +282,7 @@ fn inject_same_path_different_op_does_not_fire() {
     let p = b.join("x");
     FileSystem::create_dir_all(&fs, &p).unwrap();
     fs.inject_error(&p, FsOp::Exists, ErrorKind::NotFound);
-    // Metadata on same path: succeeds (different op).
     FileSystem::metadata(&fs, &p).unwrap();
-    // Injection for Exists still pending.
     expect_err_kind(FileSystem::try_exists(&fs, &p), ErrorKind::NotFound);
 }
 
@@ -300,9 +293,7 @@ fn inject_different_path_same_op_does_not_fire() {
     let p1 = b.join("one");
     let p2 = b.join("two");
     fs.inject_error(&p1, FsOp::CreateDir, ErrorKind::PermissionDenied);
-    // Different path, same op: succeeds.
     FileSystem::create_dir_all(&fs, &p2).unwrap();
-    // Injection for p1 still pending.
     expect_err_kind(
         FileSystem::create_dir_all(&fs, &p1),
         ErrorKind::PermissionDenied,
@@ -382,7 +373,6 @@ fn read_to_end_twice_returns_zero_second_time() {
     let mut buf = Vec::new();
     assert_eq!(r.read_to_end(&mut buf).unwrap(), 5);
     assert_eq!(&buf, b"hello");
-    // Second call: position is at EOF, returns 0.
     assert_eq!(r.read_to_end(&mut buf).unwrap(), 0);
     assert_eq!(&buf, b"hello");
 }

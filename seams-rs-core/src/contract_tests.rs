@@ -102,10 +102,6 @@ pub fn spawner_propagates_panic<S: Spawner>(spawner: &S) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Sync FileSystem contract helpers
-// ---------------------------------------------------------------------------
-
 fn write_file<F: FileSystem>(fs: &F, path: &Path, bytes: &[u8]) {
     let mut w = fs.open_write(path).expect("open_write");
     w.write_all(bytes).expect("write_all");
@@ -275,10 +271,6 @@ pub fn fs_file_write_seek<F: FileSystem>(fs: &F, base: &Path) {
     }
     assert_eq!(read_file(fs, &p), b"HELLO_seams");
 }
-
-// ---------------------------------------------------------------------------
-// Async FileSystem contract helpers
-// ---------------------------------------------------------------------------
 
 async fn async_write_file<F: AsyncFileSystem>(fs: &F, path: &Path, bytes: &[u8]) {
     let mut w = fs.open_write(path).await.expect("open_write");

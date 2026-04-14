@@ -52,8 +52,7 @@ impl Metadata {
         self.len
     }
 
-    /// Whether the entry is a zero-length file or directory. Mirrors
-    /// `std::fs::Metadata` shape so callers can rely on the same helper.
+    /// True if `len` is zero.
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
@@ -201,14 +200,17 @@ mod metadata_tests {
         assert_eq!(md.len(), 42);
         assert!(md.is_file());
         assert!(!md.is_dir());
-        assert!(!md.is_empty());
         assert_eq!(md.modified().unwrap(), now);
     }
 
     #[test]
-    fn zero_len_is_empty_and_not_empty_when_nonzero() {
-        assert!(Metadata::new(0, true, false, None).is_empty());
-        assert!(!Metadata::new(1, true, false, None).is_empty());
+    fn len_and_is_empty() {
+        let z = Metadata::new(0, true, false, None);
+        let n = Metadata::new(7, true, false, None);
+        assert_eq!(z.len(), 0);
+        assert_eq!(n.len(), 7);
+        assert!(z.is_empty());
+        assert!(!n.is_empty());
     }
 
     #[test]
