@@ -197,7 +197,7 @@ fn async_rename_missing_nf() {
 }
 #[test]
 fn async_file_read_exact() {
-    let b = base("a-fre");
+    let b = base("a-frex");
     rt().block_on(ct::async_fs_file_read_exact(&fresh(&b), &b));
 }
 #[test]
@@ -278,6 +278,199 @@ fn inject_storage_full_on_write() {
     let mut w = FileSystem::open_write(&fs, &p).unwrap();
     fs.inject_error(&p, FsOp::Write, ErrorKind::StorageFull);
     expect_err_kind(w.write_all(b"data"), ErrorKind::StorageFull);
+}
+
+#[test]
+fn inject_same_path_different_op_does_not_fire() {
+    let b = base("inj-spec-op");
+    let fs = fresh(&b);
+    let p = b.join("x");
+    FileSystem::create_dir_all(&fs, &p).unwrap();
+    fs.inject_error(&p, FsOp::Exists, ErrorKind::NotFound);
+    // Metadata on same path: succeeds (different op).
+    FileSystem::metadata(&fs, &p).unwrap();
+    // Injection for Exists still pending.
+    expect_err_kind(FileSystem::try_exists(&fs, &p), ErrorKind::NotFound);
+}
+
+#[test]
+fn inject_different_path_same_op_does_not_fire() {
+    let b = base("inj-spec-path");
+    let fs = fresh(&b);
+    let p1 = b.join("one");
+    let p2 = b.join("two");
+    fs.inject_error(&p1, FsOp::CreateDir, ErrorKind::PermissionDenied);
+    // Different path, same op: succeeds.
+    FileSystem::create_dir_all(&fs, &p2).unwrap();
+    // Injection for p1 still pending.
+    expect_err_kind(
+        FileSystem::create_dir_all(&fs, &p1),
+        ErrorKind::PermissionDenied,
+    );
+}
+
+#[test]
+fn seek_from_end_and_current_on_read() {
+    use std::io::SeekFrom;
+    let b = base("seek-endcur-r");
+    let fs = fresh(&b);
+    let p = b.join("f");
+    {
+        let mut w = FileSystem::open_write(&fs, &p).unwrap();
+        w.write_all(b"0123456789").unwrap();
+        w.flush().unwrap();
+    }
+    let mut r = FileSystem::open_read(&fs, &p).unwrap();
+    assert_eq!(r.seek(SeekFrom::End(-2)).unwrap(), 8);
+    let mut buf = [0u8; 2];
+    r.read_exact(&mut buf).unwrap();
+    assert_eq!(&buf, b"89");
+    assert_eq!(r.seek(SeekFrom::Start(0)).unwrap(), 0);
+    assert_eq!(r.seek(SeekFrom::Current(3)).unwrap(), 3);
+    r.read_exact(&mut buf).unwrap();
+    assert_eq!(&buf, b"34");
+}
+
+#[test]
+fn seek_from_end_and_current_on_write() {
+    use std::io::SeekFrom;
+    let b = base("seek-endcur-w");
+    let fs = fresh(&b);
+    let p = b.join("f");
+    let mut w = FileSystem::open_write(&fs, &p).unwrap();
+    w.write_all(b"0123456789").unwrap();
+    assert_eq!(w.seek(SeekFrom::End(-3)).unwrap(), 7);
+    w.write_all(b"AAA").unwrap();
+    assert_eq!(w.seek(SeekFrom::Start(0)).unwrap(), 0);
+    assert_eq!(w.seek(SeekFrom::Current(2)).unwrap(), 2);
+    w.write_all(b"B").unwrap();
+    w.flush().unwrap();
+    drop(w);
+    let mut r = FileSystem::open_read(&fs, &p).unwrap();
+    let mut got = Vec::new();
+    r.read_to_end(&mut got).unwrap();
+    assert_eq!(&got, b"01B3456AAA");
+}
+
+#[test]
+fn seek_negative_is_invalid_input() {
+    use std::io::SeekFrom;
+    let b = base("seek-neg");
+    let fs = fresh(&b);
+    let p = b.join("f");
+    {
+        let mut w = FileSystem::open_write(&fs, &p).unwrap();
+        w.write_all(b"0123").unwrap();
+        w.flush().unwrap();
+    }
+    let mut r = FileSystem::open_read(&fs, &p).unwrap();
+    expect_err_kind(r.seek(SeekFrom::End(-100)), ErrorKind::InvalidInput);
+    expect_err_kind(r.seek(SeekFrom::Current(-100)), ErrorKind::InvalidInput);
+}
+
+#[test]
+fn read_to_end_twice_returns_zero_second_time() {
+    let b = base("rte-twice");
+    let fs = fresh(&b);
+    let p = b.join("f");
+    {
+        let mut w = FileSystem::open_write(&fs, &p).unwrap();
+        w.write_all(b"hello").unwrap();
+        w.flush().unwrap();
+    }
+    let mut r = FileSystem::open_read(&fs, &p).unwrap();
+    let mut buf = Vec::new();
+    assert_eq!(r.read_to_end(&mut buf).unwrap(), 5);
+    assert_eq!(&buf, b"hello");
+    // Second call: position is at EOF, returns 0.
+    assert_eq!(r.read_to_end(&mut buf).unwrap(), 0);
+    assert_eq!(&buf, b"hello");
+}
+
+#[test]
+fn inject_storage_full_on_flush() {
+    let b = base("inj-flush");
+    let fs = fresh(&b);
+    let p = b.join("q");
+    let mut w = FileSystem::open_write(&fs, &p).unwrap();
+    w.write_all(b"data").unwrap();
+    fs.inject_error(&p, FsOp::Flush, ErrorKind::StorageFull);
+    expect_err_kind(w.flush(), ErrorKind::StorageFull);
+}
+
+#[test]
+fn inject_on_seek() {
+    use std::io::SeekFrom;
+    let b = base("inj-seek");
+    let fs = fresh(&b);
+    let p = b.join("f");
+    {
+        let mut w = FileSystem::open_write(&fs, &p).unwrap();
+        w.write_all(b"abcdef").unwrap();
+        w.flush().unwrap();
+    }
+    let mut r = FileSystem::open_read(&fs, &p).unwrap();
+    fs.inject_error(&p, FsOp::Seek, ErrorKind::PermissionDenied);
+    expect_err_kind(r.seek(SeekFrom::Start(0)), ErrorKind::PermissionDenied);
+}
+
+#[test]
+fn remove_dir_all_leaves_siblings_intact() {
+    let b = base("rda-sibling");
+    let fs = fresh(&b);
+    let target = b.join("tree");
+    let sibling = b.join("other");
+    FileSystem::create_dir_all(&fs, &target).unwrap();
+    FileSystem::create_dir_all(&fs, &sibling).unwrap();
+    let f_in = target.join("f");
+    let f_sib = sibling.join("f");
+    {
+        let mut w = FileSystem::open_write(&fs, &f_in).unwrap();
+        w.write_all(b"x").unwrap();
+        w.flush().unwrap();
+    }
+    {
+        let mut w = FileSystem::open_write(&fs, &f_sib).unwrap();
+        w.write_all(b"y").unwrap();
+        w.flush().unwrap();
+    }
+    FileSystem::remove_dir_all(&fs, &target).unwrap();
+    assert!(!FileSystem::try_exists(&fs, &target).unwrap());
+    assert!(!FileSystem::try_exists(&fs, &f_in).unwrap());
+    // Sibling and its file must remain.
+    assert!(FileSystem::try_exists(&fs, &sibling).unwrap());
+    assert!(FileSystem::try_exists(&fs, &f_sib).unwrap());
+}
+
+#[test]
+fn read_exact_entire_file_succeeds() {
+    let b = base("rx-full");
+    let fs = fresh(&b);
+    let p = b.join("f");
+    {
+        let mut w = FileSystem::open_write(&fs, &p).unwrap();
+        w.write_all(b"abcd").unwrap();
+        w.flush().unwrap();
+    }
+    let mut r = FileSystem::open_read(&fs, &p).unwrap();
+    let mut buf = [0u8; 4];
+    r.read_exact(&mut buf).unwrap();
+    assert_eq!(&buf, b"abcd");
+}
+
+#[test]
+fn read_exact_past_eof_is_unexpected_eof() {
+    let b = base("rx-eof");
+    let fs = fresh(&b);
+    let p = b.join("f");
+    {
+        let mut w = FileSystem::open_write(&fs, &p).unwrap();
+        w.write_all(b"abc").unwrap();
+        w.flush().unwrap();
+    }
+    let mut r = FileSystem::open_read(&fs, &p).unwrap();
+    let mut buf = [0u8; 4];
+    expect_err_kind(r.read_exact(&mut buf), ErrorKind::UnexpectedEof);
 }
 
 #[test]

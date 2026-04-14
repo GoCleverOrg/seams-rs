@@ -189,3 +189,41 @@ pub trait AsyncFileWrite: Send {
     /// Async variant of [`FileWrite::seek`].
     fn seek(&mut self, pos: io::SeekFrom) -> BoxFuture<'_, io::Result<u64>>;
 }
+
+#[cfg(test)]
+mod metadata_tests {
+    use super::*;
+
+    #[test]
+    fn accessors_reflect_ctor_args() {
+        let now = SystemTime::UNIX_EPOCH;
+        let md = Metadata::new(42, true, false, Some(now));
+        assert_eq!(md.len(), 42);
+        assert!(md.is_file());
+        assert!(!md.is_dir());
+        assert!(!md.is_empty());
+        assert_eq!(md.modified().unwrap(), now);
+    }
+
+    #[test]
+    fn zero_len_is_empty_and_not_empty_when_nonzero() {
+        assert!(Metadata::new(0, true, false, None).is_empty());
+        assert!(!Metadata::new(1, true, false, None).is_empty());
+    }
+
+    #[test]
+    fn missing_modified_returns_unsupported() {
+        let md = Metadata::new(0, false, true, None);
+        assert_eq!(
+            md.modified().unwrap_err().kind(),
+            io::ErrorKind::Unsupported
+        );
+    }
+
+    #[test]
+    fn dir_flags_distinct_from_file() {
+        let md = Metadata::new(0, false, true, None);
+        assert!(md.is_dir());
+        assert!(!md.is_file());
+    }
+}

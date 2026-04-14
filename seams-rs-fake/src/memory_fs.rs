@@ -91,11 +91,6 @@ impl MemoryFileSystem {
             .push((path.into(), op, kind));
     }
 
-    /// Number of pending (un-consumed) error injections.
-    pub fn pending_injections(&self) -> usize {
-        self.state.lock().expect("poisoned").pending.len()
-    }
-
     fn with<R>(&self, f: impl FnOnce(&mut VfsState) -> R) -> R {
         let mut guard = self.state.lock().expect("poisoned");
         f(&mut guard)
@@ -396,10 +391,11 @@ impl FileRead for MemoryFileRead {
         let node = st.files.get(&self.path).ok_or_else(not_found)?;
         let start = self.pos as usize;
         let end = start + buf.len();
-        if end > node.data.len() {
-            return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
-        }
-        buf.copy_from_slice(&node.data[start..end]);
+        let slice = node
+            .data
+            .get(start..end)
+            .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))?;
+        buf.copy_from_slice(slice);
         self.pos = end as u64;
         Ok(())
     }
@@ -449,9 +445,8 @@ impl FileWrite for MemoryFileWrite {
         let node = st.files.get_mut(&self.path).ok_or_else(not_found)?;
         let start = self.pos as usize;
         let end = start + buf.len();
-        if end > node.data.len() {
-            node.data.resize(end, 0);
-        }
+        let needed = node.data.len().max(end);
+        node.data.resize(needed, 0);
         node.data[start..end].copy_from_slice(buf);
         node.modified = SystemTime::now();
         self.pos = end as u64;
