@@ -27,4 +27,3 @@ seams-rs-std = { version = "0.2.0", path = "../seams-rs-std", optional = true }
 # published last in the chain — keeping `version` would force cargo publish
 # to re-resolve it from crates.io as a dev-dep during verification.
 seams-rs-fake = { path = "../seams-rs-fake" }
-tokio = { workspace = true, features = ["rt", "macros"] }

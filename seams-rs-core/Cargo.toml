@@ -18,4 +18,3 @@ thiserror = { workspace = true }
 # Path-only (no `version`): avoids a chicken-and-egg resolve on the first
 # workspace publish — seams-rs-core is published before seams-rs-fake.
 seams-rs-fake = { path = "../seams-rs-fake" }
-tokio = { workspace = true, features = ["rt", "macros"] }

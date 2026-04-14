@@ -91,7 +91,7 @@ fn sync_rename_missing_nf() {
 }
 #[test]
 fn sync_file_read_exact() {
-    let b = base("fre");
+    let b = base("frex");
     ct::fs_file_read_exact(&fresh(&b), &b);
 }
 #[test]
